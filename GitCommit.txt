@@ -1,0 +1,13 @@
+Git在Windows下提交方法：
+	//1.git clone https://github.com/yyxtTy/testNew.git	//将gitpub上的项目检出到本地
+	1.点击github中的"Clone or download"按钮,继续点击"Open in Desktop"按钮。
+	2.进入本地的github客户端，右键项目"open in git shell",打开终端。
+	3.进入终端以后可以输入一下命令：
+		git --version	//查看git版本
+		git status 	//查看状态，是否有变更
+		touch aaa.txt	//创建一个文件
+		./aaa.txt	//进入编辑文件
+		git add aaa.txt //连接一个文件
+		git commit	//提交代码
+		git push 	//提交到github
+		git pull	//将github的代码拉到本地
