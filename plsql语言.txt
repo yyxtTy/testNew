@@ -47,11 +47,108 @@ PLSQL是将SQL语言的数据操纵能力和过程语言的过程处理能力结
 				
 				pdate := sysdate;
 				dbms_output.put_line(pdate);
-				dbms_output.put_line(pdate+1);
-				
-				
+				dbms_output.put_line(pdate+1);					
 			end;
 			/
 		set serveroutput on 
+	2.引用型变量和记录型变量；
+		a.引用型变量
+			定义： pname 		t_eom_system_user.user_name%type;	//引用t_eom_system_user表中的user_name列的类型
+				   变量名字		表.列
+			通过下面的例子可以了解，如何定义引用型变量，如何给引用型变量赋值，如何使用引用型变量：
+			例子：
+				set serveroutput on 
+				declare
+						--定义引用型变量
+					pid     t_eom_system_user.id%type;
+					pname   t_eom_system_user.user_name%type;
+				begin
+						--给引用型变量赋值（us.user_id,us.user_name into pid,pname 通过into关键字赋值，需要一一对应）
+					select us.user_id,us.user_name into pid,pname from t_eom_system_user us where us.id = 1661 ;
+						--打印输出：'||'是输出连接符
+					dbms_output.put_line('用户名:'||pname||',ID:'||pid);
+				end;
+				/
+		b.记录性变量
+			定义：	puser		t_eom_system_user%rowtype;		//可以理解为一个数组，数组上的每个元素就代表每一列的类型
+					变量名		表中的行类型（即所有列的类型）
+				引用： puser.user_name := '王晓颖';
+			例子：
+				set serveroutput on
+				declare
+						--定义记录型变量，注意这代表一行
+					puser  t_eom_system_user%rowtype;
+				begin
+						--得到一行的信息
+					select * into puser from t_eom_system_user us where us.id = 1661 ;
+						--打印输出一行内某个列的信息
+					dbms_output.put_line('姓名:'||puser.user_name||',ID:'||puser.id);
+				end;
+	3.IF语句
+		形式1：
+			IF 条件 THEN 语句1;
+					语句2;
+			END IF;
+		形式2：
+			IF 条件 THEN 语句序列1;
+				ESLE 语句序列2;
+			END IF;
+		形式3：
+			IF 条件 THEN 语句;
+				ELSIF 语句 THEN 语句;
+				ELSE  语句;
+			END IF;
+		例子：	/*判断用户从键盘输入的数字
+					1.如何使用if语句
+					2.接收一个从键盘输入的字符串*/
+			set serveroutput on
+				--接收一个键盘输入
+				--num:地址值，含义是：在该地址上保存了输入的值
+			accept num prompt '应输入一个数字:'
+			declare
+				   --定义变量接收用户从键盘输入的数字,num前要加&这个地址符
+				   pnum number := &num;
+			begin
+				  --执行IF语句进行条件判断
+				  if pnum = 0 then dbms_output.put_line('您输入的是0');
+					 elsif pnum = 1 then dbms_output.put_line('您输入的是1');
+					 elsif pnum = 2 then dbms_output.put_line('您输入的是2');
+					 elsif pnum = 3 then dbms_output.put_line('您输入的是3');
+					 else dbms_output.put_line('其他数字');
+				   end if;
+			end;
 			
 
+
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
