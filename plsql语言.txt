@@ -1,0 +1,57 @@
+﻿1.pl/sql简介
+ps/sql :procedure language sql:过程语言sql
+	PLSQL是oracle对sql语言过程化扩展
+	过程化扩展指的是在SQL命令语言中增加了过程处理语句（入分、支循环等）
+使SQL语言具有过程处理能力。
+	1、PLSQL是sql语言的扩展，所以在PLSQL中支持sql语言
+	2、PLSQL是面向过程的语言
+PLSQL是将SQL语言的数据操纵能力和过程语言的过程处理能力结合，使得plsql面向过程但比过程语言简单、高效、灵活、实用。
+2.PLSQL语言的结构
+	pl/sql的程序结构：
+	declare
+		--说明部分（变量说明、光标说明、例外说明）
+	begin
+		--语句序列（DML语句）
+	exception
+		例外处理语句
+	end;
+	/
+	说明：注意end后面的分号，/说明退出编辑环境并执行程序
+		在默认的情况下oracle的输出开关是关闭的，需要手动打开它的输出开关
+		打开输出开关命令： set serveroutput on 
+		直接输入: / 表示执行上一条plsql程序
+	1.说明部分：
+		定义基本变量
+		类型： char,varchar2,date,number,boolean,long
+		举例：
+			var1	char(15);
+			married boolean := true;
+			psal	number(7,2);
+			变量的定义：名字在前面，类型在后面，注意变量的赋值是用 := 
+		例子：
+				--使用基本变量类型
+			declare
+				--定义基本变量类型
+				--数据类型
+				pnumber number(7,2);
+				--字符串变量
+				pname varchar2(20);
+				--日期类型
+				pdate date;
+			begin
+				pnumber := 1;
+				dbms_output.put_line(pnumber);
+				
+				pname :=  'Tom';
+				dbms_output.put_line(pname);
+				
+				pdate := sysdate;
+				dbms_output.put_line(pdate);
+				dbms_output.put_line(pdate+1);
+				
+				
+			end;
+			/
+		set serveroutput on 
+			
+
