@@ -1,0 +1,35 @@
+redis基本实用操作简介
+	dbsize  查看有多少个键
+	select1 切换到1数据库（一共有16个数据库0-15）
+	move age 1 将KEY age 从当前数据库移动到1数据库
+	info  获取服务器的信息和统计
+	config get 实时传储收到的请求 config get *
+	flushdb  删除当前选择数据库中的所有key
+	flushall 删除所有数据库中的所有key
+
+Redis 高级实用特性
+	1.安全性
+	2.主从复制
+	3.事务处理
+	4.持久化机制
+	5.发布订阅消息
+	6.虚拟内存的使用
+1.安全性： 设置密码：在配置文件中的属性requirepass
+	进入后输入keys * 会报错，需要授权，输入： auth 密码
+	/usr/local/redis/bin/redis-cli -a 密码  -a代表输入密码
+2.主从复制的特点：
+	Master可以有多个slave
+	多个slave可以连接到同一个Master外还可以连接到其他slave
+	主从复制不会阻塞Master，在同步数据时，master可以继续处理client请求
+	提高系统伸缩性
+	操作：配置slave服务器很简单，只需要在slave服务器配置文件加入以下配置：
+	slaveof 192.168.1.1 6379 #指定master的IP和端口
+	masterauth lamp  #这是主机的密码
+	如何判断哪个是master哪个是slave
+	info 命令
+
+
+
+
+
+
