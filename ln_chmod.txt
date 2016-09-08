@@ -1,0 +1,34 @@
+﻿连接：
+	1.硬链接和软连接
+		ln命令创建的连接为硬链接
+	1.1硬链接是指通过索引节点来进行连接。在linux系统中，保存在磁盘中的文件不管是什么类型都会给他分配一个编号
+		允许一个文件有多个有效路径名，这样用户就可以建立连接到重要的文件，删除连接中文件，不会删除索引节点本身
+		删除条件： 与之相关的所有硬链接文件都被删除
+	1.2软连接有时也被称为符号连接，软连接类似于Windows系统的快捷方式
+	2.实例演示
+		ln oldboyfile oldboyfile_hard_link 硬链接
+		ln -s oldboyfile oldboyfile_soft_link 软连接
+		ls -ld test/oldboy/ 	查看目录是否存在
+		ls -li  查看文件inode 号，每个文件都会有一个iNode号，通过硬链接的两个文件的inode号相同
+				硬链接不允许连接目录，软连接可以
+		ln oldboydir oldboydir_hard_link
+		ln -s oldboydir oldboydir_soft_link
+			追加内容
+		删除内容：
+			1.删除软连接对源文件和硬链接无影响
+			2.删除硬链接对源文件和软连接无影响
+			3.删除源文件对硬链接无影响，软连接失效
+					注意：闪烁表明无效了
+	
+	chmod 755 -R aaa	将文件夹aaa下的所有文件的权限改为755 数字对应权限说明：4-r读；2-w写；1-x执行；0--没有任何权限
+	默认权限分配的命令umask
+	对于文件来说，umask的设置是假定文件拥有八进制666权限上进行的，文件的权限就是666减去umask的掩码数值
+	对于目录来说，umask的设置是假定文件有用八进制777权限上进行的，文件的权限就是777减去umask的掩码数值
+	& umask  //查看当前的umask值
+	& umask 044 	//强umask的值改为044
+	umask一般是放在用户相关shell的配置文件当中，比如用户家目录的.bashrc或.profile,也可以放置在全局性的用户配置文件中，
+	比如/etc/longin.defs,也可以放置在SHELL全局配置文件中，比如/etc/profile或 /etc/bashrc等；
+	
+	
+	
+	
