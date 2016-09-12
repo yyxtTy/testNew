@@ -1,0 +1,88 @@
+﻿Crond介绍
+	用户执行的工作；某个用户定期要做的任务工作，例如每隔十分钟和互联网上的时间服务器进行时间同步，每晚0点备份站点数据
+	一般这些工作需要用户自行设置
+	1.1 指令语法
+		crontab [ -u user ] file
+		crontab [ -u user ] {-l -r -e}
+		crontab -l 命令相当于 cat /var/spool/cron/root
+		-l   显示用户crontab文件内容		crontab -l(常用)
+		-e   进入vi编辑用户crontab文件		crontab -e(常用)
+		-i	 删除用户crontab文件前确认提示	crontab -ri
+		-r   从crontab目录中删除crontab文件	crontab -r
+		-u user 指定使用者 					crontab -u deployer -l  返回deployer用户下的定时任务
+		
+		定时任务的格式分为七列，前五段为时间设定段，第六段为那个用户执行（默认是当前用户），第七段是要执行的命令段
+		格式如下；
+		
+		crontab时间段的含义
+		段				含义			取值范围
+		第一段			代表分钟		00~59
+		第二段			代表小时		00~23
+		第三段			代表日期		00~31
+		第四段			代表月份		01~12
+		第五段			代表星期几		0~6		0代表周日
+		特殊符号的含义：
+		*				代表任何时间都，入 00 23 * * * commond  标示无论何月何日何周的23:00都执行任务。
+		-				减号，表示分隔符，标示一个时间范围段，如17-19点，每小时的00分执行任务。 00 17-19 * * * commond。
+		,				逗号，表示分割时段的意思。 30 17,18,,19 * * * /bin/sh/script/oldboy.sh/script/oldboy
+						每天的17,18,19点的半点时刻执行/bin/sh/script/oldboy.sh脚本
+		/n				n代表数字，即"每隔n单位时间",例如：每隔10分钟执行一次任务：* /10 * * * *　command,其中
+						*/10 也可以写成 0-59/10 
+	2.crontab依赖的服务
+		chkconfig --list | grep crond
+		etc/init.d/crond status
+	3.crontab命令生产环境专业写法
+		1.每分钟打印一次自己的名字到/server/log/自己的名字命名的文件中。
+			答案： #print char task by oldboy for programer At 2016-09-12
+					*/1 **** echo "oldboy" >>/server/log/oldboy.log 2>&1
+		2.每周六日，上午9点和下午2点来老男孩linux运维实战培训学习(/server/script/oldboy.sh)
+			答案： #first zhushi ,cron job for ett by oldboy 2016-09-12
+					00 09,14 * * 6,0 /server/script/oldboy.sh > /dev/null 2>&1
+		针对上面的例子做一下说明：
+			1.定时任务前一定要做注释：什么人，什么时间，因为什么，做了什么事
+			2.执行任务时 可以省略用户，在执行脚本的时候，尽量带上/bin/sh,否则可能会因为脚本没有执行权限而无法执行
+			3.需要root权限执行的任务可以登录到root用户下然后设置，如不需要root权限，可以登录到普通用户下，然后设置。
+				这里要特别注意，不同用户环境的环境变量问题。如果调用了环境变量(如生产环境的java脚本)，此时最好在脚本中
+				将环境变量重新export一下
+			4.定时任务的结尾最好加上 >dev/null 2>&1等内容，如果需要打印日志，可以追加到指定日志里，不推荐留空这种不专业做法
+				其中， dev/null为特殊的设备，表示空设备。2>&1使标准错误和标准输出一样，本命令内容即把脚本输出重定向到/dev/null,
+				即不记录任何输出，也不给系统发邮件
+				如果定时任务不加 >/dev/null 2>&1等命令配置，时间长了可能会导致邮件临时目录 /var/spool/cron/clientmqueue猛增，
+				占用大量磁盘inode节点。
+				可以用 1>/dev/null 2>/dev/null 代替
+			5.crontab生产解决案例
+				案例1：No space left on device
+					在设置crontab时提示 No space left on device ,用df -k 检查还有空间，用df -i显示/var已占用100%，如果inode
+					耗尽，则系统不能创建文件。
+					在/var/spool/clientmqueue/下有超多文件 ls 半天没反应，用rm -rf * 回自动跳出root,然后用xargs来配合解决。
+					cd /var/spool/clientmqueue &&ls |xargs rm -f 
+		
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
