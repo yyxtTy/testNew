@@ -1,0 +1,275 @@
+﻿LAMP系列之Http服务重要概念
+	1.1http协议，超文本传输协议，是互联网上运用的最为广泛的一种协议，设计http最初的目的是
+		为了提供一种发布和接收HTML页面的方法。
+		[deployer@np-m910-35-7 ~]$ curl -I http://10.249.6.237:8082/UCloudApp/ucloudIndex.jsp
+			HTTP/1.1 200 OK
+			Server: Apache-Coyote/1.1
+			Set-Cookie: JSESSIONID=6D7C369A1D4A9D20E585BF132DCC6419; Path=/UCloudApp
+			Content-Type: text/html;charset=UTF-8
+			Transfer-Encoding: chunked
+			Date: Wed, 21 Sep 2016 02:41:52 GMT
+		取出头信息
+	1.2静态和动态
+		1.静态网页：纯粹的html格式的网页通常被称为"静态网页"，早期的网站一般都是静态网页制作的
+		2.动态网页：网页的后缀不是以html结尾，而是以"asp,jsp,do"等结尾，并且有可能跟着一个'?'
+			特点： 一般是以数据库技术为基础，降低维护工作量
+					动态网页能够实现更过的功能，如用户注册、用户登录、在线调查、用户管理等
+					动态网页实际上并不是独立于服务器上的网页，只有当用户请求服务器时才返回一个完整的网页；
+					动态网页中的？，用来传递参数
+		3.伪静态网页：a.将动态网页生成静态网页，消除动态网页中的参数；
+					  b.伪静态技术,不是生成真正的静态网页，而是通过某些技术(如rewrite规则)，把网页的Url重写，同样消除了
+						动态网页的参数，
+	2.web服务
+		主流web服务器
+		apache/nginx/tomcat/resin
+		2.1apache
+			fqdn 完整的主机名
+			安装Apache：1.源码编译安装Apache；2.yum或rpm安装Apache；
+		2.2nginx
+		2.3resin
+		2.4tomcat
+LAMP系列之Apache服务生产实践指南
+	1.Apache介绍
+		Apache HTTP Server是Apache软件基金会的一个高性能、功能强大、健壮可靠、有很灵活的开源web服务软件，可以运行在广泛使用的
+			计算机平台上。
+	2.Apache的特点及使用场景
+		特点：功能强大、配置简单、速度快、应用广泛、性能稳定可靠、并可以作为代理服务器或负载均衡来使用。
+		应用场合：使用Apache来运行html页、图片等；
+					LAMP称之为经典组合；Linux Apache Mysql PHP;
+					使用Apache结合tomcat、resin运行jsp、java等程序
+					使用Apache作为代理、负载均衡、rewrite规则等过滤。
+	3.安装Apache
+		先卸载rpm安装的Apache，
+		查询当前系统中已安装的apache软件包： rpm -qa http*命令
+		卸载Apache软件包： rpm -e --nodeps httpd-....		//-e卸载 --nodeps 不检查依赖
+		说明： -q 等同于 --query查询的意思； -a 等同于 --all 范围是系统所有软件包
+		安装Apache:
+			1.下载Apache安装包
+			2.解压：tar -zxvf 
+			3.安装：先查看安装文件cat README和cat INSTALL 
+					./configure --prefix=/usr/local/apache2.2.31
+					make
+					make install
+			4.ln -s /usr/local/apache2.2.31 /usr/local/apache		建立软连接；
+			5.检查编译安装的情况
+				[deployer@np-m910-36-10 ~]$ /abp_home/apache/bin/apachectl -l
+					Compiled in modules:
+					  core.c
+					  mod_authn_file.c
+					  mod_authn_default.c
+					  mod_authz_host.c...
+				[deployer@np-m910-36-10 ~]$ /abp_home/apache/bin/apachectl -M 	查看加载模块及编译方式
+					Loaded Modules:
+					 core_module (static)
+					 authn_file_module (static)
+					 authn_default_module (static)
+					 so_module (static)...
+					Syntax OK 
+				直接输入/abp_home/apache/bin/apachectl 可以查看所有可接的参数。apachectl是一个shell脚本，当执行
+				apachectl实际又是在调用httpd这个脚本，有兴趣可以看一下这个脚本
+			6.检查apache安装成果
+				安装完apache并未有启动，需要我们手动启动apache
+				启动命令：	[deployer@np-m910-36-7 abp_home]$ sudo apache/bin/apachectl start
+				启动后查看： netstat -lnt 查看80端口是否存在
+				通过端口反查；lsof -i tcp:80
+				验证：输入IP地址，出现it works ，证明成功；
+				失败原因排查：
+					1.iptables防火墙和selinux是否关闭
+						/etc/init.d/iptables stop		直接关闭防火墙
+						允许命令： iptables -I INPUT -p --dport 80 -j ACCEPT
+						关闭selinux: setenforce 0 		临时关闭
+								cat /etc/selinux/config |grep SELINUX=disable		永久关闭
+					2.检查端口：端口不存在服务肯定不正常
+						netstat -lnt |grep 80
+					3.进程是否存在：
+						ps -ef|grep httpd
+					4.服务器本地wget http://10.249.6.242 测试一下,wget是下载的
+						服务器本地wget如果正常，说明apache安装，启动都正常，说明应该是防火墙或网络不通畅等问题了
+					5.看apache日志，查看方法：
+						tail -200f /abp_home/apache/logs/error_log
+			7.部署一个简单的web站点
+				apache的默认站点目录，是安装目录下的apache/htdocs,这可以从apache主配置文件apache/conf/httpd.conf中查到
+				查看方式：	
+					[deployer@np-m910-36-7 apache]$ grep -i "Documentroot" conf/httpd.conf 		-i 不区分大小写
+						# DocumentRoot: The directory out of which you will serve your
+						DocumentRoot "/abp_home/apache2.2.31/htdocs"		//此处指向的是默认的apache站点目录
+						# This should be changed to whatever you set DocumentRoot to.
+							# access content that does not live under the DocumentRoot.
+	4.apache配置
+		1.apache的目录结构说明
+			bin目录
+				[deployer@np-m910-36-7 apache]$ tree bin/
+				bin/					#apache服务性能测试工具，简单、易用，同类软件还有jmeter、loadrunner、webbench等
+				|-- ab
+				|-- apachectl			#apachectl是apache启动命令，需重点掌握，apachectl是一个脚本。
+				|-- apr-1-config		#
+				|-- apu-1-config
+				|-- apxs				#apxs是一个为apache服务器编译和安装扩展模块的工具，在进行DSO方式模块编译时会用到。
+				|-- checkgid
+				|-- dbmmanage
+				|-- envvars
+				|-- envvars-std
+				|-- htcacheclean
+				|-- htdbm
+				|-- htdigest
+				|-- htpasswd			#建立和更新基本认证文件，如：配置naglos	等监控服务时会用到
+				|-- httpd				#httpd是apache的控制命令程序，在执行apachectl时会调用httpd
+				|-- httxt2dbm
+				|-- logresolve
+				`-- rotatelogs			#apache自带的日志轮询命令，在使用时，可以用cronolog替代
+			conf目录是apache所有配置文件的目录
+				[deployer@np-m910-36-7 apache]$ tree conf/ -L 1		看到conf下面的一层
+					conf/	
+					|-- extra		#apache的辅助的配置文件目录，这个目录里的文件会经常访问修改，如httpd-vhost.conf默认在此目录
+					|-- httpd.conf	#apache的主配置文件，我们会经常访问修改，每一行都要掌握
+					|-- magic
+					|-- mime.types
+					`-- original
+
+					2 directories, 3 files
+			htdocs是编译安装apache时的默认站点目录
+				htdocsz中有index.html 这个默认首页文件	注意：首页文件名是在httpd.conf中提前设置好的，DirectoryIndex index.html 
+				[deployer@np-m910-36-7 apache]$ grep -i Directoryindex  conf/httpd.conf 
+					# DirectoryIndex: sets the file that Apache will serve if a directory
+						DirectoryIndex index.html
+			logs目录，apache的日志 
+				[deployer@np-m910-36-7 apache]$ tree logs/
+					logs/
+					|-- access_log			#访问日志文件
+					|-- error_log			#错误日志
+					`-- httpd.pid			#httpd启动后进程号都写入到这个日志文件中
+			model模块目录，以后PHP模块放在这里
+		2.主配置文件httpd.conf
+			httpd.conf是apache的最重要的配置文件之一，必须搞定，下面是一些详细的httpd.conf的参数详解
+				less httpd.conf 查看 ，自己阅读英文配置文件及注释
+				查看去掉注释并显示行号的httpd.conf:[deployer@np-m910-36-7 conf]$ egrep -v "^.*#|^$" httpd.conf|nl
+		3.apache的扩展配置文件
+			apache的扩展配置文件是通过在httpd.conf主配置文件中嵌入Include命令来实现的，不过默认情况下是注释状态。
+				摘录httpd.conf主配置文件中部分include行
+			通过tree命令列出apache扩展的配置文件
+				[deployer@np-m910-36-7 conf]$ tree extra/
+					extra/
+					|-- httpd-autoindex.conf
+					|-- httpd-dav.conf
+					|-- httpd-default.conf				#这个是配置apache的相关服务参数；超时时间，保持连接时间等
+					|-- httpd-info.conf
+					|-- httpd-languages.conf
+					|-- httpd-manual.conf
+					|-- httpd-mpm.conf					#服务器的池管理，优化apache的一个配置文件，常用有worker模式和
+					|-- httpd-multilang-errordoc.conf
+					|-- httpd-ssl.conf					#支持ssl,是一个配置加密的配置文件
+					|-- httpd-userdir.conf
+					`-- httpd-vhosts.conf				#虚拟住址的配置文件，用的比较多
+		4.apache虚拟主机的配置
+			通过命令 egrep -v "^#|^$" httpd-vhosts.conf命令，去掉httpd-vhosts.conf虚拟主机配置的注释和空行；			
+				[deployer@np-m910-36-7 extra]$ egrep -v "^#|^$" httpd-vhosts.conf |nl
+					#这里表示使用基于名称的虚拟主机配置，这是产品环境下最常用的配置，*：80中的*表示监听本机的所有IP地址，80表示
+						在80端口上提供http服务请求
+					 1  NameVirtualHost *:80
+					 2  <VirtualHost *:80>		#定义一个虚拟主机，监听本机所有IP地址80端口上提供的http服务请求
+					 3      ServerAdmin webmaster@dummy-host.example.com	#这里可以配置管理员的邮箱，不配置则去httpd.conf找
+					 4      DocumentRoot "/abp_home/apache2.2.31/docs/dummy-host.example.com"	#站点目录
+					 5      ServerName dummy-host.example.com		#这里配置提供服务的域名，如www.baidu.com,如果是生产
+											环境需要把www.baidu.com解析到服务器上
+					 6      ServerAlias www.dummy-host.example.com	#别名，如baidu.com
+					 7      ErrorLog "logs/dummy-host.example.com-error_log"
+					 8      CustomLog "logs/dummy-host.example.com-access_log" common
+					 9  </VirtualHost>		#虚拟主机配置的结束标签
+					10  <VirtualHost *:80>
+					11      ServerAdmin webmaster@dummy-host2.example.com
+					12      DocumentRoot "/abp_home/apache2.2.31/docs/dummy-host2.example.com"
+					13      ServerName dummy-host2.example.com
+					14      ErrorLog "logs/dummy-host2.example.com-error_log"
+					15      CustomLog "logs/dummy-host2.example.com-access_log" common
+					16  </VirtualHost>
+		5.基于域名的虚拟主机实战配置
+			1.开启主配置文件httpd.conf中的扩展配置文件httpd-vhosts.conf，修改前先备份
+				进入httpd.conf中，去掉 #Include conf/extra/httpd-vhosts.conf 前面的#
+				[deployer@np-m910-36-7 conf]$ grep -i include httpd.conf 
+					# included to add extra features or to modify the default configuration of 
+					#Include conf/extra/httpd-mpm.conf
+					#Include conf/extra/httpd-multilang-errordoc.conf
+					#Include conf/extra/httpd-autoindex.conf
+					#Include conf/extra/httpd-languages.conf
+					#Include conf/extra/httpd-userdir.conf
+					#Include conf/extra/httpd-info.conf
+					#Include conf/extra/httpd-vhosts.conf
+				快速修改命令： sed
+					或者 vi httpd.conf +395 
+			2.配置虚拟主机配置文件
+				先备份httpd-vhosts.conf. 备份：[deployer@np-m910-36-7 extra]$ cp httpd-vhosts.conf httpd-vhosts.conf.boco.2016.0922
+				编辑httpd-vhosts.conf配置文件,编辑后查看文件
+					[deployer@np-m910-36-7 extra]$ grep -v \# httpd-vhosts.conf
+							NameVirtualHost *:80
+							<VirtualHost *:80>
+								ServerAdmin webmaster@dummy-host.example.com
+								DocumentRoot "/abp_home/apache2.2.31/boco"		#引号中间不能有空格
+								ServerName boco.com
+								ServerAlias www.boco.com
+								ErrorLog "logs/dummy-host.example.com-error_log"
+								CustomLog "logs/dummy-host.example.com-access_log" common
+							</VirtualHost>
+				检查修改过的配置文件
+					bin/apachectl -t 检查配置文件
+						[deployer@np-m910-36-7 extra]$ ../../bin/apachectl -t
+							Syntax OK				//表示语法OK
+					创建目录及index.html文件
+					[deployer@np-m910-36-7 apache]$ echo 'I am boco' >> boco/index.html
+				重启： 执行graceful参数重启apache服务
+					graceful参数，而不是restart参数，graceful参数可以平滑的重启apache
+					[deployer@np-m910-36-7 bin]$ sudo ./apachectl graceful
+					启动后要检查,ps -ef |grep http
+				在Windows中配置域名
+					打开C:\Windows\System32\drivers\etc\hosts文件，添加如下信息
+						127.0.0.1       localhost
+						10.249.6.242	www.bocolty.com www.bbslty.com www.vvv.com
+				打开浏览器，输入www.bocolty.com地址，会报403错误，原因是没有配置许可；
+				配置许可方法：
+					打开httpd.conf文件，复制其中的一段配置
+						<Directory "/abp_home/apache2.2.31/htdocs">
+							Options Indexes FollowSymLinks
+							AllowOverride None
+							Order allow,deny
+							Allow from all
+						</Directory>
+					将其复制到httpd.conf 文件的最下面，并修改其中的路径，和权限，修改后如下，
+						<Directory "/abp_home/apache2.2.31/boco">
+							Options FollowSymLinks
+							AllowOverride None
+							Order allow,deny
+							Allow from all
+						</Directory>
+				重启apache,(重启即指用apachectl graceful,并查看进程和端口，自己记住，以后不再提醒)
+						
+		改站点目录就要配置许可
+			
+
+				
+     
+		
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+	
